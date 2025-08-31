@@ -120,7 +120,7 @@ The application features a sophisticated AI-powered search system that allows yo
 
 ```mermaid
 graph TD
-    A[User Query: "What did I write on 9th Aug 2025?"] --> B[Frontend SearchBar]
+    A["User Query: What did I write on 9th Aug 2025?"] --> B[Frontend SearchBar]
     B --> C[POST /api/ai/search]
     C --> D{Generate Query Embedding}
     
@@ -133,7 +133,7 @@ graph TD
     G --> I{Found Entries?}
     H --> I
     
-    I -->|No| J[Return "No entries found"]
+    I -->|No| J[Return No entries found]
     I -->|Yes| K[Prepare Context with Entry Dates]
     
     K --> L[Generate AI Prompt with Context]
@@ -144,8 +144,8 @@ graph TD
     subgraph "Database Layer"
         P[Entry Table]
         P --> Q[entry_date: 2025-08-09]
-        P --> R[content: "Today I worked on..."]
-        P --> S[embedding: [0.1, 0.3, -0.2, ...]]
+        P --> R["content: Today I worked on..."]
+        P --> S["embedding: [0.1, 0.3, -0.2, ...]"]
     end
     
     G --> P
@@ -158,8 +158,8 @@ graph TD
 flowchart LR
     A[User Query] --> B{Contains Date Pattern?}
     
-    B -->|Yes| C[Extract Dates:<br/>• "9th aug 2025"<br/>• "august 9, 2025"<br/>• "2025-08-09"<br/>• "8/9/2025"]
-    B -->|No| D[Generate Embedding<br/>Vector: [768 dimensions]]
+    B -->|Yes| C["Extract Dates:<br/>• 9th aug 2025<br/>• august 9, 2025<br/>• 2025-08-09<br/>• 8/9/2025"]
+    B -->|No| D["Generate Embedding<br/>Vector: [768 dimensions]"]
     
     C --> E[Query by entry_date]
     D --> F[Cosine Similarity Search]
@@ -172,7 +172,7 @@ flowchart LR
     
     I --> J{Entries Found?}
     J -->|Yes| H
-    J -->|No| K[Return "No entries found"]
+    J -->|No| K[Return No entries found]
     
     H --> L[AI Response Generation]
 ```
@@ -360,17 +360,17 @@ POST /api/ai/search
 
 #### Date-Specific Searches
 ```
-"What did I write on 9th aug 2025?"
-"Show me my entry for august 9, 2025"
-"What happened on 2025-08-09?"
+What did I write on 9th aug 2025?
+Show me my entry for august 9, 2025
+What happened on 2025-08-09?
 ```
 
 #### Semantic Searches
 ```
-"How was I feeling last week?"
-"What work projects did I mention?"
-"When did I write about traveling?"
-"What activities did I do with friends?"
+How was I feeling last week?
+What work projects did I mention?
+When did I write about traveling?
+What activities did I do with friends?
 ```
 
 #### Response Format
