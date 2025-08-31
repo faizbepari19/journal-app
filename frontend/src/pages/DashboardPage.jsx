@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import useAuthStore from '../store/authStore';
 import SearchBar from '../components/SearchBar';
 import SearchResultsDisplay from '../components/SearchResultsDisplay';
@@ -7,16 +7,31 @@ import JournalEntriesList from '../components/JournalEntriesList';
 
 const DashboardPage = () => {
   const { user, logout } = useAuthStore();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState(null);
 
   const handleLogout = () => {
     logout();
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
   return (
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="header-content">
-          <h1>My Journal</h1>
+          <div className="header-left">
+            <button 
+              onClick={toggleSidebar} 
+              className="sidebar-toggle"
+              aria-label="Toggle sidebar"
+            >
+              ☰
+            </button>
+            <h1>My Journal</h1>
+          </div>
           <div className="header-user">
             <span>Welcome, {user?.username}</span>
             <button onClick={handleLogout} className="logout-button">
@@ -26,29 +41,39 @@ const DashboardPage = () => {
         </div>
       </header>
 
-      <main className="dashboard-main">
-        <div className="dashboard-content">
-          {/* AI Search Section */}
-          <section className="search-section">
-            <div className="section-header">
-              <h2>Ask About Your Entries</h2>
-              <p>Ask questions about your past journal entries and get AI-powered insights</p>
-            </div>
-            <SearchBar />
-            <SearchResultsDisplay />
-          </section>
+      <div className="dashboard-body">
+        {/* Sidebar with entries navigation */}
+        <aside className={`dashboard-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+          <div className="sidebar-header">
+            <h3>Journal Entries</h3>
+          </div>
+          <JournalEntriesList 
+            isNavigation={true}
+            onEntrySelect={setSelectedEntry}
+            selectedEntryId={selectedEntry?.id}
+          />
+        </aside>
 
-          {/* New Entry Section */}
-          <section className="new-entry-section">
-            <JournalEntryForm />
-          </section>
+        {/* Main content area */}
+        <main className="dashboard-main">
+          <div className="dashboard-content">
+            {/* AI Search Section */}
+            <section className="search-section">
+              <div className="section-header">
+                <h2>Ask About Your Entries</h2>
+                <p>Ask questions about your past journal entries and get AI-powered insights</p>
+              </div>
+              <SearchBar />
+              <SearchResultsDisplay />
+            </section>
 
-          {/* Entries List Section */}
-          <section className="entries-section">
-            <JournalEntriesList />
-          </section>
-        </div>
-      </main>
+            {/* New Entry Section */}
+            <section className="new-entry-section">
+              <JournalEntryForm selectedEntry={selectedEntry} onEntrySaved={() => setSelectedEntry(null)} />
+            </section>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

@@ -27,7 +27,9 @@ class Entry(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    entry_date = db.Column(db.Date, nullable=False, default=datetime.utcnow().date)  # Date for the journal entry
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # When it was created in the system
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     # Store embedding as JSON text for now (can be upgraded to pgvector later)
     embedding_json = db.Column(db.Text, nullable=True)
@@ -54,6 +56,8 @@ class Entry(db.Model):
         return {
             'id': self.id,
             'content': self.content,
+            'entry_date': self.entry_date.isoformat() if self.entry_date else None,
             'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'user_id': self.user_id
         }

@@ -17,11 +17,28 @@ def create_entry():
         if not data:
             return jsonify({'error': 'Request body is required'}), 400
             
-        # Only use content field as that's what the model has
         content = data.get('content', '').strip()
+        entry_date_str = data.get('entry_date')  # YYYY-MM-DD format
         
         if not content:
             return jsonify({'error': 'Content is required'}), 400
+        
+        # Parse entry_date or use today's date
+        entry_date = None
+        if entry_date_str:
+            try:
+                from datetime import datetime
+                entry_date = datetime.strptime(entry_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+        else:
+            from datetime import date
+            entry_date = date.today()
+        
+        # Validate that entry_date is not in the future
+        from datetime import date
+        if entry_date > date.today():
+            return jsonify({'error': 'Entry date cannot be in the future'}), 400
         
         # Try to generate embedding, but don't fail if it doesn't work
         embedding = None
@@ -32,9 +49,10 @@ def create_entry():
             print(f"Warning: Could not generate embedding: {str(e)}")
             # Continue without embedding - the app should still work
         
-        # Create entry using only the fields that exist in the model
+        # Create entry with entry_date field
         entry = Entry(
             content=content,
+            entry_date=entry_date,
             user_id=user_id,
             embedding=embedding  # Will be None if AI failed
         )
@@ -59,8 +77,8 @@ def get_entries():
         user_id = int(get_jwt_identity())  # Convert to int
         
         # Get all entries for the user, sorted by date (newest first)
-        entries = Entry.query.filter_by(user_id=user_id).order_by(Entry.created_at.desc()).all()
-        
+        entries = Entry.query.filter_by(user_id=user_id).order_by(Entry.entry_date.desc()).all()
+
         return jsonify({
             'entries': [entry.to_dict() for entry in entries]
         }), 200
@@ -83,11 +101,26 @@ def update_entry(entry_id):
         if not entry:
             return jsonify({'error': 'Entry not found'}), 404
         
-        # Update content field only (no title field in model)
+        # Update content and entry_date fields
         content = data.get('content', entry.content).strip() if data.get('content') is not None else entry.content
+        entry_date_str = data.get('entry_date')  # YYYY-MM-DD format
         
         if not content:
             return jsonify({'error': 'Content cannot be empty'}), 400
+        
+        # Parse entry_date if provided
+        entry_date = entry.entry_date  # Keep existing date if not provided
+        if entry_date_str:
+            try:
+                from datetime import datetime
+                entry_date = datetime.strptime(entry_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+            
+            # Validate that entry_date is not in the future
+            from datetime import date
+            if entry_date > date.today():
+                return jsonify({'error': 'Entry date cannot be in the future'}), 400
         
         # Try to generate new embedding for updated content
         embedding = entry.embedding  # Keep existing embedding if AI fails
@@ -101,6 +134,7 @@ def update_entry(entry_id):
         
         # Update entry
         entry.content = content
+        entry.entry_date = entry_date
         entry.embedding = embedding
         
         db.session.commit()

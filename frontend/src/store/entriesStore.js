@@ -17,10 +17,15 @@ const useEntriesStore = create((set, get) => ({
     }
   },
 
-  createEntry: async (content) => {
+  createEntry: async (entryData) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await entriesAPI.createEntry({ content });
+      // Handle both old format (string) and new format (object with date)
+      const payload = typeof entryData === 'string' 
+        ? { content: entryData }
+        : entryData;
+        
+      const response = await entriesAPI.createEntry(payload);
       const newEntry = response.data.entry;
       
       set((state) => ({
@@ -36,10 +41,15 @@ const useEntriesStore = create((set, get) => ({
     }
   },
 
-  updateEntry: async (entryId, content) => {
+  updateEntry: async (entryId, entryData) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await entriesAPI.updateEntry(entryId, { content });
+      // Handle both old format (string) and new format (object with date)
+      const payload = typeof entryData === 'string' 
+        ? { content: entryData }
+        : entryData;
+        
+      const response = await entriesAPI.updateEntry(entryId, payload);
       const updatedEntry = response.data.entry;
       
       set((state) => ({
