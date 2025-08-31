@@ -56,12 +56,14 @@ def create_app():
             "origins": [
                 "http://localhost:5173",
                 "http://localhost:5174", 
+                "https://journal-app-six-xi.vercel.app",
                 "https://*.vercel.app",
                 "https://*.netlify.app",
                 "https://*.onrender.com"
             ],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"]
+            "allow_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True
         }
     })
     
