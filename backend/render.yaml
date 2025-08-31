@@ -3,9 +3,12 @@ services:
     name: journal-app-backend
     env: python
     plan: free
+    region: oregon
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: python app.py
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: GROQ_API_KEY
