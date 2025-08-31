@@ -148,7 +148,7 @@ class GroqProvider(LLMProvider):
         
         try:
             response = self.client.chat.completions.create(
-                model="llama3-8b-8192",  # Fast Llama 3 model
+                model="llama-3.1-8b-instant",  # Updated to current supported model
                 messages=[
                     {"role": "user", "content": prompt}
                 ],
