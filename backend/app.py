@@ -33,6 +33,11 @@ configure_ssl_bypass()
 def create_app():
     app = Flask(__name__)
     
+    # Ensure instance directory exists for SQLite
+    instance_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance')
+    if not os.path.exists(instance_path):
+        os.makedirs(instance_path)
+    
     # Configuration
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -44,7 +49,21 @@ def create_app():
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     jwt.init_app(app)
-    CORS(app)
+    
+    # CORS configuration for production
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": [
+                "http://localhost:5173",
+                "http://localhost:5174", 
+                "https://*.vercel.app",
+                "https://*.netlify.app",
+                "https://*.onrender.com"
+            ],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"]
+        }
+    })
     
     # Import models to ensure they're registered with SQLAlchemy
     from models import User, Entry
@@ -66,4 +85,5 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
