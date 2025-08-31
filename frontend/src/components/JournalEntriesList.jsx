@@ -55,6 +55,15 @@ const JournalEntriesList = ({ isNavigation = false, onEntrySelect, selectedEntry
     }
   };
 
+  const formatISTTime = (istString) => {
+    // If we have the pre-formatted IST string from backend, use it
+    if (istString && istString.includes('IST')) {
+      return istString;
+    }
+    // Fallback to regular formatting
+    return istString || '';
+  };
+
   const truncateContent = (content, maxLength = 60) => {
     return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
   };
@@ -95,8 +104,12 @@ const JournalEntriesList = ({ isNavigation = false, onEntrySelect, selectedEntry
             >
               <div className="entry-nav-header">
                 <div className="entry-nav-date">
-                  <div className="date-text">{formatDate(entry.entry_date)}</div>
-                  <div className="time-text">{formatTime(entry.entry_date)}</div>
+                  <div className="date-text">{formatDate(entry.entry_date || entry.created_at)}</div>
+                  <div className="time-text">
+                    {entry.updated_at_ist ? `Updated: ${formatISTTime(entry.updated_at_ist)}` : 
+                     entry.created_at_ist ? `Created: ${formatISTTime(entry.created_at_ist)}` : 
+                     formatTime(entry.created_at)}
+                  </div>
                 </div>
                 <button
                   onClick={(e) => handleDelete(entry.id, e)}
@@ -135,7 +148,17 @@ const JournalEntriesList = ({ isNavigation = false, onEntrySelect, selectedEntry
               onClick={() => toggleEntryExpansion(entry.id)}
             >
               <div className="entry-date">
-                {formatDate(entry.created_at)} at {formatTime(entry.created_at)}
+                <div>Entry: {formatDate(entry.entry_date || entry.created_at)}</div>
+                {entry.updated_at_ist && (
+                  <div style={{ fontSize: '0.85em', color: '#666' }}>
+                    Last updated: {formatISTTime(entry.updated_at_ist)}
+                  </div>
+                )}
+                {entry.created_at_ist && !entry.updated_at_ist && (
+                  <div style={{ fontSize: '0.85em', color: '#666' }}>
+                    Created: {formatISTTime(entry.created_at_ist)}
+                  </div>
+                )}
               </div>
               <div className="entry-toggle">
                 {expandedEntries.has(entry.id) ? '▼' : '▶'}

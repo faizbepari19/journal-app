@@ -76,9 +76,12 @@ def get_entries():
     try:
         user_id = int(get_jwt_identity())  # Convert to int
         
-        # Get all entries for the user, sorted by date (newest first)
-        entries = Entry.query.filter_by(user_id=user_id).order_by(Entry.entry_date.desc()).all()
-
+        # Get all entries for the user, sorted by entry_date (newest first), then by updated_at (newest first)
+        entries = Entry.query.filter_by(user_id=user_id).order_by(
+            Entry.entry_date.desc().nullslast(), 
+            Entry.updated_at.desc()
+        ).all()
+        
         return jsonify({
             'entries': [entry.to_dict() for entry in entries]
         }), 200

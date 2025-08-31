@@ -53,11 +53,22 @@ class Entry(db.Model):
             self.embedding_json = None
     
     def to_dict(self):
+        from datetime import timezone, timedelta
+        
+        # Define IST timezone (UTC+5:30)
+        ist = timezone(timedelta(hours=5, minutes=30))
+        
+        # Convert UTC times to IST
+        created_at_ist = self.created_at.replace(tzinfo=timezone.utc).astimezone(ist) if self.created_at else None
+        updated_at_ist = self.updated_at.replace(tzinfo=timezone.utc).astimezone(ist) if self.updated_at else None
+        
         return {
             'id': self.id,
             'content': self.content,
             'entry_date': self.entry_date.isoformat() if self.entry_date else None,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': created_at_ist.isoformat() if created_at_ist else None,
+            'updated_at': updated_at_ist.isoformat() if updated_at_ist else None,
+            'created_at_ist': created_at_ist.strftime('%Y-%m-%d %I:%M:%S %p IST') if created_at_ist else None,
+            'updated_at_ist': updated_at_ist.strftime('%Y-%m-%d %I:%M:%S %p IST') if updated_at_ist else None,
             'user_id': self.user_id
         }
