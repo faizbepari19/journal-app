@@ -37,6 +37,10 @@ def ai_search():
             limit=10
         )
         
+        # If no entries found via embedding, try date-based search
+        if not relevant_entries:
+            relevant_entries = DatabaseService.find_entries_by_date_query(query, user_id)
+        
         if not relevant_entries:
             return jsonify({
                 'response': "I couldn't find any relevant entries to answer your question. Try adding more journal entries first!",
@@ -47,7 +51,9 @@ def ai_search():
         # Prepare context from relevant entries
         context_entries = []
         for entry in relevant_entries:
-            context_entries.append(f"Date: {entry.created_at.strftime('%Y-%m-%d %H:%M')}\nContent: {entry.content}")
+            # Use entry_date if available, fallback to created_at
+            entry_date_str = entry.entry_date.strftime('%Y-%m-%d') if entry.entry_date else entry.created_at.strftime('%Y-%m-%d')
+            context_entries.append(f"Date: {entry_date_str}\nContent: {entry.content}")
         
         context = "\n\n---\n\n".join(context_entries)
         
