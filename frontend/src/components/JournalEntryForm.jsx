@@ -14,7 +14,7 @@ const JournalEntryForm = ({ selectedEntry, onEntrySaved }) => {
     if (selectedEntry) {
       setContent(selectedEntry.content);
       // Set the date to the entry's creation date
-      const entryCreatedDate = new Date(selectedEntry.created_at).toISOString().split('T')[0];
+      const entryCreatedDate = new Date(selectedEntry.entry_date).toISOString().split('T')[0];
       setEntryDate(entryCreatedDate);
     } else {
       setContent('');
