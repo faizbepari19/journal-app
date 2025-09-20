@@ -38,12 +38,48 @@ def create_app():
     if not os.path.exists(instance_path):
         os.makedirs(instance_path)
     
+    # Enhanced database configuration
+    database_url = os.getenv('DATABASE_URL')
+    
+    # Fix PostgreSQL SSL issues if using PostgreSQL
+    if database_url and database_url.startswith('postgresql'):
+        # Handle SSL connection issues
+        if '?' not in database_url:
+            database_url += '?sslmode=require&sslcert=&sslkey=&sslrootcert='
+        elif 'sslmode' not in database_url:
+            database_url += '&sslmode=require&sslcert=&sslkey=&sslrootcert='
+        
+        print(f"📊 Using PostgreSQL with SSL configuration")
+    elif database_url and database_url.startswith('sqlite'):
+        print(f"📊 Using SQLite database")
+    
     # Configuration
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_ECHO'] = False  # Disable SQL query logging to reduce noise
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False  # Tokens don't expire
+    
+    # Enhanced SQLAlchemy configuration for connection stability
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_size': 10,
+        'pool_recycle': 120,  # Recycle connections every 2 minutes
+        'pool_pre_ping': True,  # Verify connections before use
+        'pool_reset_on_return': 'commit',
+        'connect_args': {
+            'connect_timeout': 10,
+            'application_name': 'journal_app'
+        }
+    }
+    
+    # Add PostgreSQL-specific connection args if using PostgreSQL
+    if database_url and database_url.startswith('postgresql'):
+        app.config['SQLALCHEMY_ENGINE_OPTIONS']['connect_args'].update({
+            'sslmode': 'require',
+            'sslcert': None,
+            'sslkey': None,
+            'sslrootcert': None
+        })
     
     # Configure logging for development
     if os.getenv('FLASK_ENV') == 'development':
@@ -59,6 +95,16 @@ def create_app():
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     jwt.init_app(app)
+    
+    @app.teardown_appcontext
+    def cleanup_db_session(error):
+        """Clean up database session after each request"""
+        try:
+            if error:
+                db.session.rollback()
+            db.session.remove()
+        except Exception as e:
+            app.logger.warning(f"Session cleanup error: {e}")
     
     # CORS configuration for production
     CORS(app, resources={

@@ -4,11 +4,40 @@ from typing import List, Dict, Any, Optional, Union, Tuple
 from datetime import datetime, date
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import text
+from sqlalchemy.exc import DisconnectionError, OperationalError
+import logging
+
+logger = logging.getLogger(__name__)
+
+def handle_db_connection_error(func):
+    """Decorator to handle database connection errors gracefully - only when they occur"""
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except (DisconnectionError, OperationalError) as e:
+            logger.warning(f"Database connection error in {func.__name__}: {str(e)}")
+            try:
+                # Attempt to recover connection only when error occurs
+                db.session.rollback()
+                db.session.remove()
+                db.engine.dispose()
+                logger.info(f"Database connection recovery attempted for {func.__name__}")
+                # Retry the operation once
+                return func(*args, **kwargs)
+            except Exception as retry_error:
+                logger.error(f"Database connection recovery failed in {func.__name__}: {retry_error}")
+                raise
+        except Exception as e:
+            # Non-connection errors are logged but not retried
+            logger.error(f"Database error in {func.__name__}: {str(e)}")
+            raise
+    return wrapper
 
 class DatabaseService:
     """Refactored database service with unified search functionality"""
     
     @staticmethod
+    @handle_db_connection_error
     def search_entries(
         user_id: int,
         query: Optional[str] = None,
