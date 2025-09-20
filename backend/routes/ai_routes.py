@@ -79,26 +79,27 @@ def ai_search():
                 'ai_available': True
             }), 200
         
-        # Prepare context from relevant entries
+        # Prepare context from relevant entries (optimized for fewer tokens)
         context_entries = []
         for entry in relevant_entries:
             # Use entry_date if available, fallback to created_at
-            entry_date_str = entry.entry_date.strftime('%Y-%m-%d') if entry.entry_date else entry.created_at.strftime('%Y-%m-%d')
-            context_entries.append(f"Date: {entry_date_str}\nContent: {entry.content}")
+            entry_date_str = entry.entry_date.strftime('%m-%d') if entry.entry_date else entry.created_at.strftime('%m-%d')
+            # Compact format: just date and content, no labels
+            context_entries.append(f"{entry_date_str}: {entry.content}")
         
-        context = "\n\n---\n\n".join(context_entries)
+        context = "\n\n".join(context_entries)
 
         print(context)
         
-        # Create prompt for the LLM
-        prompt = f"""Based on the following journal entries, please answer the user's question in a conversational and helpful manner. Provide specific details from the entries when relevant, and mention dates when appropriate.
+        # Create prompt for the LLM (optimized for fewer tokens)
+        prompt = f"""Answer based on these journal entries. Be conversational and mention dates when relevant.
 
-Journal Entries:
+Entries:
 {context}
 
-User's Question: {query}
+Question: {query}
 
-Please provide a concise, summary-style answer that directly addresses the question:"""
+Answer:"""
         
         # Generate response using LLM
         try:
