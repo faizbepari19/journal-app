@@ -4,8 +4,11 @@ services:
     env: python
     plan: free
     region: oregon
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: python app.py
+    # Optimized build command for faster installs
+    buildCommand: |
+      pip install --upgrade pip --no-warn-script-location && 
+      pip install --no-cache-dir --prefer-binary -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 app:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
@@ -19,3 +22,8 @@ services:
         value: production
       - key: DATABASE_URL
         value: sqlite:///instance/journal.db
+      # Production optimizations
+      - key: PYTHONPATH
+        value: .
+      - key: PYTHONUNBUFFERED
+        value: "1"
