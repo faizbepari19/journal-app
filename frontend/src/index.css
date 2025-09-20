@@ -21,6 +21,42 @@
   @apply bg-gray-400 dark:bg-gray-500;
 }
 
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better scroll container */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* Fix for better mobile scrolling */
+.mobile-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent horizontal scroll issues */
+.prevent-horizontal-scroll {
+  overflow-x: hidden;
+}
+
 /* Smooth transitions for theme changes */
 * {
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;

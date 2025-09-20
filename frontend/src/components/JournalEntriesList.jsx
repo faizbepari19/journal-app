@@ -102,61 +102,63 @@ const JournalEntriesList = ({ isNavigation = false, onEntrySelect, selectedEntry
   if (isNavigation) {
     // Navigation sidebar style
     return (
-      <div className="h-full">
+      <div className="h-full flex flex-col">
         {error && (
-          <div className="p-4 m-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+          <div className="p-4 m-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex-shrink-0">
             <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
           </div>
         )}
         
-        <div className="space-y-1 p-2">
-          {entries.map((entry) => (
-            <div 
-              key={entry.id} 
-              className={`
-                group relative p-4 rounded-lg cursor-pointer transition-all duration-200
-                ${selectedEntryId === entry.id 
-                  ? 'bg-gradient-to-r from-primary-50 to-accent-50 dark:from-primary-900/20 dark:to-accent-900/20 border-l-4 border-primary-500' 
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                }
-              `}
-              onClick={() => handleEntryClick(entry)}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    {formatDate(entry.entry_date || entry.created_at)}
+        <div className="flex-1 overflow-y-auto scrollbar-thin mobile-scroll">
+          <div className="space-y-1 p-2">
+            {entries.map((entry) => (
+              <div 
+                key={entry.id} 
+                className={`
+                  group relative p-4 rounded-lg cursor-pointer transition-all duration-200 flex-shrink-0
+                  ${selectedEntryId === entry.id 
+                    ? 'bg-gradient-to-r from-primary-50 to-accent-50 dark:from-primary-900/20 dark:to-accent-900/20 border-l-4 border-primary-500' 
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                  }
+                `}
+                onClick={() => handleEntryClick(entry)}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {formatDate(entry.entry_date || entry.created_at)}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {entry.updated_at_ist ? `Updated: ${formatISTTime(entry.updated_at_ist)}` : 
+                       entry.created_at_ist ? `Created: ${formatISTTime(entry.created_at_ist)}` : 
+                       formatTime(entry.created_at)}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {entry.updated_at_ist ? `Updated: ${formatISTTime(entry.updated_at_ist)}` : 
-                     entry.created_at_ist ? `Created: ${formatISTTime(entry.created_at_ist)}` : 
-                     formatTime(entry.created_at)}
-                  </div>
+                  <button
+                    onClick={(e) => handleDelete(entry.id, e)}
+                    className="
+                      opacity-0 group-hover:opacity-100 p-1 rounded text-gray-400 hover:text-red-500 
+                      hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 flex-shrink-0
+                      focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1
+                    "
+                    title="Delete entry"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
                 </div>
-                <button
-                  onClick={(e) => handleDelete(entry.id, e)}
-                  className="
-                    opacity-0 group-hover:opacity-100 p-1 rounded text-gray-400 hover:text-red-500 
-                    hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200
-                    focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1
-                  "
-                  title="Delete entry"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
+                
+                <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2">
+                  {truncateContent(entry.content)}
+                </div>
+                
+                {selectedEntryId === entry.id && (
+                  <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-primary-500 to-accent-500 rounded-r-full"></div>
+                )}
               </div>
-              
-              <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2">
-                {truncateContent(entry.content)}
-              </div>
-              
-              {selectedEntryId === entry.id && (
-                <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-primary-500 to-accent-500 rounded-r-full"></div>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     );

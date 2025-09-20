@@ -88,9 +88,9 @@ const DashboardPage = () => {
           bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
           h-[calc(100vh-4rem)] sticky top-16
           transition-all duration-300 ease-in-out
-          flex-shrink-0
+          flex-shrink-0 flex flex-col
         `}>
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
               <svg className="w-5 h-5 mr-2 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -102,7 +102,7 @@ const DashboardPage = () => {
             </p>
           </div>
           
-          <div className="overflow-y-auto h-full">
+          <div className="flex-1 overflow-y-auto min-h-0 scrollbar-thin mobile-scroll">
             <JournalEntriesList 
               isNavigation={true}
               onEntrySelect={setSelectedEntry}
@@ -112,7 +112,7 @@ const DashboardPage = () => {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 p-6 space-y-8">
+        <main className="flex-1 p-6 space-y-8 overflow-y-auto max-h-[calc(100vh-4rem)]">
           {/* AI Search Section */}
           <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div className="mb-6">
