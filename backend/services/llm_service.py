@@ -38,6 +38,19 @@ class LLMProvider(ABC):
     @abstractmethod
     def generate_embedding(self, text: str) -> List[float]:
         pass
+    
+    @abstractmethod
+    def extract_date_filter(self, query: str) -> Dict[str, Any]:
+        """
+        Extract date filter information from natural language query
+        Returns: {
+            'has_date_filter': bool,
+            'start_date': str (YYYY-MM-DD) or None,
+            'end_date': str (YYYY-MM-DD) or None,
+            'filter_type': str ('specific_date', 'date_range', 'relative', None)
+        }
+        """
+        pass
 
 class GeminiProvider(LLMProvider):
     """Google Gemini LLM provider"""
@@ -94,6 +107,75 @@ class GeminiProvider(LLMProvider):
             # Return a random embedding of the right size for development
             import random
             return [random.random() for _ in range(768)]
+    
+    def extract_date_filter(self, query: str) -> Dict[str, Any]:
+        """Extract date filter from query using Gemini AI"""
+        try:
+            from datetime import datetime, date
+            current_date = datetime.now().strftime('%Y-%m-%d')
+            current_year = datetime.now().year
+            current_month = datetime.now().month
+            
+            prompt = f"""Analyze this user query and extract any date/time filtering information. Today's date is {current_date}.
+
+User Query: "{query}"
+
+If the query contains any date or time references, extract them and return ONLY a JSON object with these fields:
+{{
+    "has_date_filter": true/false,
+    "start_date": "YYYY-MM-DD" (or null),
+    "end_date": "YYYY-MM-DD" (or null),
+    "filter_type": "specific_date|date_range|relative" (or null),
+    "explanation": "brief explanation of the date filter found"
+}}
+
+Examples:
+- "current month" → {{"has_date_filter": true, "start_date": "{current_year}-{current_month:02d}-01", "end_date": "{current_year}-{current_month:02d}-30", "filter_type": "relative", "explanation": "Current month filter"}}
+- "last week" → {{"has_date_filter": true, "start_date": "calculated-start", "end_date": "calculated-end", "filter_type": "relative", "explanation": "Previous week filter"}}
+- "August 2025" → {{"has_date_filter": true, "start_date": "2025-08-01", "end_date": "2025-08-31", "filter_type": "date_range", "explanation": "Specific month filter"}}
+- "no date reference" → {{"has_date_filter": false, "start_date": null, "end_date": null, "filter_type": null, "explanation": "No date filtering needed"}}
+
+Return ONLY the JSON object, no other text:"""
+
+            response = self.text_model.generate_content(
+                prompt,
+                generation_config={
+                    'temperature': 0.1,  # Low temperature for consistent parsing
+                    'max_output_tokens': 300,
+                }
+            )
+            
+            # Parse the JSON response
+            import json
+            response_text = response.text.strip()
+            
+            # Clean up the response to extract just the JSON
+            if response_text.startswith('```json'):
+                response_text = response_text.replace('```json', '').replace('```', '').strip()
+            
+            try:
+                date_filter = json.loads(response_text)
+                print(f"📅 LLM extracted date filter: {date_filter}")
+                return date_filter
+            except json.JSONDecodeError as e:
+                print(f"⚠️ Failed to parse LLM date filter response: {response_text}")
+                return {
+                    'has_date_filter': False,
+                    'start_date': None,
+                    'end_date': None,
+                    'filter_type': None,
+                    'explanation': 'Failed to parse date filter'
+                }
+                
+        except Exception as e:
+            print(f"Error extracting date filter with Gemini: {str(e)}")
+            return {
+                'has_date_filter': False,
+                'start_date': None,
+                'end_date': None,
+                'filter_type': None,
+                'explanation': f'Error: {str(e)}'
+            }
 
 class OpenAIProvider(LLMProvider):
     """OpenAI LLM provider (placeholder implementation)"""
@@ -107,8 +189,18 @@ class OpenAIProvider(LLMProvider):
         raise NotImplementedError("OpenAI provider not implemented yet")
     
     def generate_embedding(self, text: str) -> List[float]:
-        # TODO: Implement OpenAI embedding generation
+        # TODO: Implement OpenAI embedding
         raise NotImplementedError("OpenAI provider not implemented yet")
+    
+    def extract_date_filter(self, query: str) -> Dict[str, Any]:
+        # TODO: Implement OpenAI date extraction
+        return {
+            'has_date_filter': False,
+            'start_date': None,
+            'end_date': None,
+            'filter_type': None,
+            'explanation': 'OpenAI provider not implemented'
+        }
 
 class GroqProvider(LLMProvider):
     """Groq LLM provider"""
@@ -193,6 +285,84 @@ class GroqProvider(LLMProvider):
             # Return random embedding as last resort
             import random
             return [random.random() * 2 - 1 for _ in range(768)]
+    
+    def extract_date_filter(self, query: str) -> Dict[str, Any]:
+        """Extract date filter from query using Groq AI"""
+        if not self.client:
+            return {
+                'has_date_filter': False,
+                'start_date': None,
+                'end_date': None,
+                'filter_type': None,
+                'explanation': 'Groq API unavailable'
+            }
+        
+        try:
+            from datetime import datetime
+            current_date = datetime.now().strftime('%Y-%m-%d')
+            current_year = datetime.now().year
+            current_month = datetime.now().month
+            
+            prompt = f"""Analyze this user query and extract date/time filtering information. Today's date is {current_date}.
+
+Query: "{query}"
+
+Return ONLY a JSON object with these fields:
+{{
+    "has_date_filter": true/false,
+    "start_date": "YYYY-MM-DD" or null,
+    "end_date": "YYYY-MM-DD" or null,
+    "filter_type": "specific_date|date_range|relative" or null,
+    "explanation": "brief explanation"
+}}
+
+Examples:
+- "current month" → {{"has_date_filter": true, "start_date": "{current_year}-{current_month:02d}-01", "end_date": "{current_year}-{current_month:02d}-30", "filter_type": "relative", "explanation": "Current month filter"}}
+- "last week" → calculate previous week dates
+- "August 2025" → {{"has_date_filter": true, "start_date": "2025-08-01", "end_date": "2025-08-31", "filter_type": "date_range", "explanation": "Specific month"}}
+- No date → {{"has_date_filter": false, "start_date": null, "end_date": null, "filter_type": null, "explanation": "No date filter"}}
+
+Return ONLY the JSON, no other text:"""
+
+            response = self.client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                max_tokens=200,
+                timeout=15
+            )
+            
+            # Parse the JSON response
+            import json
+            response_text = response.choices[0].message.content.strip()
+            
+            # Clean up the response
+            if response_text.startswith('```json'):
+                response_text = response_text.replace('```json', '').replace('```', '').strip()
+            
+            try:
+                date_filter = json.loads(response_text)
+                print(f"📅 Groq extracted date filter: {date_filter}")
+                return date_filter
+            except json.JSONDecodeError as e:
+                print(f"⚠️ Failed to parse Groq date filter: {response_text}")
+                return {
+                    'has_date_filter': False,
+                    'start_date': None,
+                    'end_date': None,
+                    'filter_type': None,
+                    'explanation': 'Failed to parse'
+                }
+                
+        except Exception as e:
+            print(f"Error extracting date filter with Groq: {str(e)}")
+            return {
+                'has_date_filter': False,
+                'start_date': None,
+                'end_date': None,
+                'filter_type': None,
+                'explanation': f'Error: {str(e)}'
+            }
 
 class LLMFactory:
     """Factory class for creating LLM providers"""

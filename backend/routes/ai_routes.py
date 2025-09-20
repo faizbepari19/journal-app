@@ -18,10 +18,16 @@ def ai_search():
         query = data['query']
         print(f"🔍 AI Search Request - User: {user_id}, Query: '{query}'")
         
-        # Try to generate embedding for the search query
+        # Step 1: Extract date filter using LLM
+        print("🤖 Extracting date filter using LLM...")
+        date_filter = llm_service.extract_date_filter(query)
+        print(f"📅 LLM Date Filter Result: {date_filter}")
+        
+        # Step 2: Generate embedding for the search query
         query_embedding = None
         try:
             query_embedding = llm_service.generate_embedding(query)
+            print(f"🧠 Generated embedding of length {len(query_embedding) if query_embedding else 0}")
         except Exception as e:
             print(f"Warning: Could not generate search embedding: {str(e)}")
             # Fall back to basic text search
@@ -30,21 +36,41 @@ def ai_search():
                 'relevant_entries_count': 0,
                 'ai_available': False
             }), 200
+
+        # Step 3: Search entries with LLM-extracted date filter
+        relevant_entries = []
         
-        # Find similar entries using vector search
-        print(f"🧠 Generated embedding of length {len(query_embedding) if query_embedding else 0}")
-        relevant_entries = DatabaseService.find_similar_entries(
-            embedding=query_embedding,
-            user_id=user_id,
-            limit=10
-        )
-        print(f"🔎 Vector search found {len(relevant_entries)} entries")
-        
-        # If no entries found via embedding, try date-based search
-        if not relevant_entries:
-            print("🔄 Falling back to date-based search...")
-            relevant_entries = DatabaseService.find_entries_by_date_query(query, user_id)
-            print(f"📅 Date search found {len(relevant_entries)} entries")
+        if date_filter.get('has_date_filter'):
+            print(f"🔍 Using LLM date-filtered search...")
+            # Use LLM date-filtered vector search
+            relevant_entries = DatabaseService.find_similar_entries_with_llm_date_filter(
+                embedding=query_embedding,
+                user_id=user_id,
+                date_filter=date_filter,
+                limit=10
+            )
+            print(f"📅 LLM date-filtered search found {len(relevant_entries)} entries")
+            
+            # If no entries found via embedding with date filter, try pure date search
+            if not relevant_entries:
+                print("🔄 Falling back to pure LLM date search...")
+                relevant_entries = DatabaseService.find_entries_by_llm_date_filter(user_id, date_filter)
+                print(f"� Pure LLM date search found {len(relevant_entries)} entries")
+        else:
+            print(f"🔍 No date filter detected, using regular vector search...")
+            # No date filtering, use regular vector search
+            relevant_entries = DatabaseService.find_similar_entries(
+                embedding=query_embedding,
+                user_id=user_id,
+                limit=10
+            )
+            print(f"🔎 Regular vector search found {len(relevant_entries)} entries")
+            
+            # Fallback to old regex-based date search if no results
+            if not relevant_entries:
+                print("🔄 Falling back to regex date search...")
+                relevant_entries = DatabaseService.find_entries_by_date_query(query, user_id)
+                print(f"📅 Regex date search found {len(relevant_entries)} entries")
         
         if not relevant_entries:
             return jsonify({
