@@ -27,9 +27,19 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Don't redirect if we're already on login page or if this is a login attempt
+      const isLoginRequest = error.config?.url?.includes('/auth/login');
+      const isAlreadyOnLoginPage = window.location.pathname === '/login';
+      
+      if (!isLoginRequest && !isAlreadyOnLoginPage) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      } else if (isLoginRequest) {
+        // For login requests, just clear any stale tokens but don't redirect
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+      }
     }
     return Promise.reject(error);
   }
