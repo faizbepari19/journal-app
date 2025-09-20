@@ -1,48 +1,94 @@
 from extensions import db
 from models import Entry
 from typing import List
-import numpy as np
 from datetime import datetime, date
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import text
 
 class DatabaseService:
-    """Service for database operations with simplified vector similarity search"""
-    
-    @staticmethod
-    def cosine_similarity(a, b):
-        """Calculate cosine similarity between two vectors"""
-        a = np.array(a)
-        b = np.array(b)
-        return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+    """Service for database operations with efficient pgvector similarity search"""
     
     @staticmethod
     def find_similar_entries(embedding: List[float], user_id: int, limit: int = 10) -> List[Entry]:
         """
-        Find entries similar to the given embedding using cosine similarity
+        Find entries similar to the given embedding using pgvector's efficient cosine similarity
         """
         try:
-            # Get all entries for the user that have embeddings
+            print(f"🔍 Searching for similar entries for user {user_id} using pgvector")
+            
+            # Use pgvector's native cosine distance operator (<=>)
+            # Note: cosine distance = 1 - cosine similarity, so smaller distance = more similar
+            entries = db.session.query(Entry).filter(
+                Entry.user_id == user_id,
+                Entry.embedding_vector.isnot(None)
+            ).order_by(
+                Entry.embedding_vector.cosine_distance(embedding)
+            ).limit(limit).all()
+            
+            print(f"📊 pgvector found {len(entries)} similar entries")
+            
+            # Optional: Log similarity scores for top entries (without extra queries)
+            if entries:
+                print(f"✅ Returning top {len(entries)} most similar entries efficiently")
+            
+            return entries
+            
+        except Exception as e:
+            print(f"❌ Error in pgvector similarity search: {str(e)}")
+            print("🔄 Falling back to JSON-based search...")
+            
+            # Fallback to old method if pgvector fails
+            return DatabaseService._find_similar_entries_fallback(embedding, user_id, limit)
+    
+    @staticmethod
+    def _find_similar_entries_fallback(embedding: List[float], user_id: int, limit: int = 10) -> List[Entry]:
+        """
+        Fallback method using JSON embeddings and Python cosine similarity
+        """
+        try:
+            import math
+            
+            print(f"� Using fallback search for user {user_id}")
+            
+            # Get all entries for the user that have JSON embeddings
             all_entries = Entry.query.filter_by(user_id=user_id).filter(Entry.embedding_json.isnot(None)).all()
+            print(f"📊 Found {len(all_entries)} entries with JSON embeddings in database")
             
             if not all_entries:
+                print("❌ No entries with embeddings found")
                 return []
             
-            # Calculate similarities
+            # Calculate similarities using pure Python
             similarities = []
             for entry in all_entries:
                 if entry.embedding:
                     try:
-                        similarity = DatabaseService.cosine_similarity(embedding, entry.embedding)
+                        # Pure Python cosine similarity
+                        a, b = embedding, entry.embedding
+                        dot_product = sum(x * y for x, y in zip(a, b))
+                        magnitude_a = math.sqrt(sum(x * x for x in a))
+                        magnitude_b = math.sqrt(sum(x * x for x in b))
+                        
+                        if magnitude_a == 0 or magnitude_b == 0:
+                            similarity = 0
+                        else:
+                            similarity = dot_product / (magnitude_a * magnitude_b)
+                            
                         similarities.append((entry, similarity))
+                        print(f"📈 Entry ID {entry.id}: similarity = {similarity:.4f}")
                     except (ValueError, TypeError):
-                        # Skip entries with invalid embeddings
+                        print(f"⚠️  Skipping entry ID {entry.id} due to invalid embedding")
                         continue
             
             # Sort by similarity (highest first) and return top results
             similarities.sort(key=lambda x: x[1], reverse=True)
-            return [entry for entry, _ in similarities[:limit]]
+            top_entries = [entry for entry, _ in similarities[:limit]]
+            print(f"✅ Returning {len(top_entries)} most similar entries")
+            return top_entries
             
         except Exception as e:
-            print(f"Error in similarity search: {str(e)}")
+            print(f"❌ Error in fallback similarity search: {str(e)}")
+            return []
     @staticmethod
     def find_entries_by_date_query(query: str, user_id: int) -> List[Entry]:
         """

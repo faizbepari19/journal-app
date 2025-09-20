@@ -7,6 +7,8 @@ Flask-CORS==4.0.0
 python-dotenv==1.0.0
 numpy
 sqlalchemy==2.0.23
+psycopg2-binary==2.9.7
+pgvector==0.2.4
 groq==0.4.2
 httpx==0.24.1
 certifi==2023.7.22

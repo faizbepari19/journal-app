@@ -16,6 +16,7 @@ def ai_search():
             return jsonify({'error': 'Query is required'}), 400
         
         query = data['query']
+        print(f"🔍 AI Search Request - User: {user_id}, Query: '{query}'")
         
         # Try to generate embedding for the search query
         query_embedding = None
@@ -31,15 +32,19 @@ def ai_search():
             }), 200
         
         # Find similar entries using vector search
+        print(f"🧠 Generated embedding of length {len(query_embedding) if query_embedding else 0}")
         relevant_entries = DatabaseService.find_similar_entries(
             embedding=query_embedding,
             user_id=user_id,
             limit=10
         )
+        print(f"🔎 Vector search found {len(relevant_entries)} entries")
         
         # If no entries found via embedding, try date-based search
         if not relevant_entries:
+            print("🔄 Falling back to date-based search...")
             relevant_entries = DatabaseService.find_entries_by_date_query(query, user_id)
+            print(f"📅 Date search found {len(relevant_entries)} entries")
         
         if not relevant_entries:
             return jsonify({
@@ -56,6 +61,8 @@ def ai_search():
             context_entries.append(f"Date: {entry_date_str}\nContent: {entry.content}")
         
         context = "\n\n---\n\n".join(context_entries)
+
+        print(context)
         
         # Create prompt for the LLM
         prompt = f"""Based on the following journal entries, please answer the user's question in a conversational and helpful manner. Provide specific details from the entries when relevant, and mention dates when appropriate.

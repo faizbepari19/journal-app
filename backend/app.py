@@ -41,8 +41,18 @@ def create_app():
     # Configuration
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_ECHO'] = False  # Disable SQL query logging to reduce noise
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False  # Tokens don't expire
+    
+    # Configure logging for development
+    if os.getenv('FLASK_ENV') == 'development':
+        import logging
+        # Reduce SQLAlchemy logging noise - only show warnings and errors
+        logging.basicConfig()
+        logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+        logging.getLogger('sqlalchemy.pool').setLevel(logging.WARNING)
+        logging.getLogger('sqlalchemy.dialects').setLevel(logging.WARNING)
     
     # Initialize extensions
     db.init_app(app)

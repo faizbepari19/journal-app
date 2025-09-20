@@ -1,6 +1,7 @@
 from datetime import datetime
 from extensions import db
 import json
+from pgvector.sqlalchemy import Vector
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -31,13 +32,17 @@ class Entry(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)  # When it was created in the system
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    # Store embedding as JSON text for now (can be upgraded to pgvector later)
+    # Store embedding as JSON text for backward compatibility
     embedding_json = db.Column(db.Text, nullable=True)
+    # Native pgvector embedding for efficient similarity search
+    embedding_vector = db.Column(Vector(768), nullable=True)  # 768 is typical for text embeddings
     
     @property
     def embedding(self):
-        """Get embedding as list of floats"""
-        if self.embedding_json:
+        """Get embedding as list of floats - prefer vector column, fallback to JSON"""
+        if self.embedding_vector is not None:
+            return list(self.embedding_vector)
+        elif self.embedding_json:
             try:
                 return json.loads(self.embedding_json)
             except json.JSONDecodeError:
@@ -46,10 +51,12 @@ class Entry(db.Model):
     
     @embedding.setter
     def embedding(self, value):
-        """Set embedding from list of floats"""
+        """Set embedding from list of floats - store in both vector and JSON columns"""
         if value:
-            self.embedding_json = json.dumps(value)
+            self.embedding_vector = value  # pgvector column for efficient search
+            self.embedding_json = json.dumps(value)  # JSON backup for compatibility
         else:
+            self.embedding_vector = None
             self.embedding_json = None
     
     def to_dict(self):
