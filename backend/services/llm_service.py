@@ -130,6 +130,8 @@ If the query contains any date or time references, extract them and return ONLY 
 }}
 
 Examples:
+- "today" or "what have I done today" → {{"has_date_filter": true, "start_date": "{current_date}", "end_date": "{current_date}", "filter_type": "specific_date", "explanation": "Today's entries"}}
+- "yesterday" → {{"has_date_filter": true, "start_date": "calculate-yesterday", "end_date": "calculate-yesterday", "filter_type": "specific_date", "explanation": "Yesterday's entries"}}
 - "current month" → {{"has_date_filter": true, "start_date": "{current_year}-{current_month:02d}-01", "end_date": "{current_year}-{current_month:02d}-30", "filter_type": "relative", "explanation": "Current month filter"}}
 - "last week" → {{"has_date_filter": true, "start_date": "calculated-start", "end_date": "calculated-end", "filter_type": "relative", "explanation": "Previous week filter"}}
 - "August 2025" → {{"has_date_filter": true, "start_date": "2025-08-01", "end_date": "2025-08-31", "filter_type": "date_range", "explanation": "Specific month filter"}}
@@ -317,6 +319,8 @@ Return ONLY a JSON object with these fields:
 }}
 
 Examples:
+- "today" or "what have I done today" → {{"has_date_filter": true, "start_date": "{current_date}", "end_date": "{current_date}", "filter_type": "specific_date", "explanation": "Today's entries"}}
+- "yesterday" → {{"has_date_filter": true, "start_date": "calculate-yesterday", "end_date": "calculate-yesterday", "filter_type": "specific_date", "explanation": "Yesterday's entries"}}
 - "current month" → {{"has_date_filter": true, "start_date": "{current_year}-{current_month:02d}-01", "end_date": "{current_year}-{current_month:02d}-30", "filter_type": "relative", "explanation": "Current month filter"}}
 - "last week" → calculate previous week dates
 - "August 2025" → {{"has_date_filter": true, "start_date": "2025-08-01", "end_date": "2025-08-31", "filter_type": "date_range", "explanation": "Specific month"}}
