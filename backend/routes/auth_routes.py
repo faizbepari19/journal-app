@@ -86,3 +86,29 @@ def profile():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@auth_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    try:
+        data = request.get_json()
+        
+        if not data or not data.get('email'):
+            return jsonify({'error': 'Email is required'}), 400
+        
+        email = data['email']
+        
+        # Check if user exists
+        user = User.query.filter_by(email=email).first()
+        
+        if not user:
+            return jsonify({'message': 'If that email is registered, a password reset link has been sent.'}), 200
+        
+        # Here you would normally generate a password reset token and send an email.
+        # For simplicity, we'll just log the action.
+        print(f"Password reset requested for email: {email}")
+        
+        return jsonify({'message': 'If that email is registered, a password reset link has been sent.'}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

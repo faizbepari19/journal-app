@@ -57,6 +57,19 @@ const useAuthStore = create((set, get) => ({
     });
   },
 
+  forgotPassword: async (email) => {
+    set({ isLoading: true, error: null });
+    try {
+      await authAPI.forgotPassword(email);
+      set({ isLoading: false, error: null });
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error.response?.data?.error || 'Forgot password failed';
+      set({ isLoading: false, error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  },
+
   clearError: () => set({ error: null }),
 }));
 

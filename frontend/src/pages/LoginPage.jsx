@@ -104,6 +104,13 @@ const LoginPage = () => {
                   "
                   placeholder="Enter your password"
                 />
+
+                <Link
+                  to="/forgot-password"
+                  className="font-semibold text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 transition-colors duration-300"
+                >
+                  Forgot Password
+                </Link>
               </div>
             </div>
 
