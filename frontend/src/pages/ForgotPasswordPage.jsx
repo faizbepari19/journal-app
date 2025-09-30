@@ -21,10 +21,15 @@ const ForgotPasswordPage = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
+    // Clear success message when user starts typing again
+    if (successMessage) {
+      setSuccessMessage(null);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSuccessMessage(null);
     const response = await forgotPassword(formData.email);
     if (response.success) {
       setSuccessMessage(response.message || 'If that email is registered, a reset link has been sent.');

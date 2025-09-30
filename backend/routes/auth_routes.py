@@ -1,8 +1,8 @@
+import os
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from extensions import db, bcrypt
 from models import User
-from services.email_service import email_service
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -41,6 +41,7 @@ def register():
         
         # Optional: Send welcome email (non-blocking)
         try:
+            from services.email_service import email_service
             email_service.send_welcome_email(user.email, user.username)
         except Exception as email_error:
             print(f"⚠️ Welcome email failed to send: {str(email_error)}")
@@ -113,6 +114,12 @@ def forgot_password():
             # Return success message even if user doesn't exist (security best practice)
             return jsonify({'message': 'If that email is registered, a password reset link has been sent.'}), 200
         
+        # Check if email service is configured
+        try:
+            from services.email_service import email_service
+        except ValueError as e:
+            return jsonify({'error': 'Email service not configured. Please contact support.'}), 503
+        
         try:
             # Generate reset token
             reset_token = user.generate_reset_token()
@@ -131,7 +138,6 @@ def forgot_password():
                 print(f"✅ Password reset email sent successfully to {user.email}")
             else:
                 print(f"❌ Failed to send password reset email to {user.email}")
-                # Don't expose email sending failures to user for security
             
             return jsonify({'message': 'If that email is registered, a password reset link has been sent.'}), 200
             

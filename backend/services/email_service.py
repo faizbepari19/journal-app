@@ -11,8 +11,11 @@ class EmailService:
         if not self.api_key:
             raise ValueError("SENDGRID_API_KEY environment variable is required")
         
+        # Remove quotes if they exist in the API key
+        self.api_key = self.api_key.strip("'\"")
+        
         self.client = SendGridAPIClient(api_key=self.api_key)
-        self.from_email = 'faizbepari19@gmail.com'  # You can customize this
+        self.from_email = 'faizbepari19@gmail.com'
         
     def send_password_reset_email(self, to_email: str, reset_token: str, username: str) -> bool:
         """
