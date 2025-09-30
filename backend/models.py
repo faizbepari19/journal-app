@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from extensions import db
 import json
+import secrets
 from pgvector.sqlalchemy import Vector
 
 class User(db.Model):
@@ -12,8 +13,37 @@ class User(db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Password reset fields
+    reset_token = db.Column(db.String(100), nullable=True)
+    reset_token_expires = db.Column(db.DateTime, nullable=True)
+    
     # Relationship
     entries = db.relationship('Entry', backref='author', lazy=True, cascade='all, delete-orphan')
+    
+    def generate_reset_token(self) -> str:
+        """Generate a secure password reset token"""
+        self.reset_token = secrets.token_urlsafe(32)
+        # Token expires in 1 hour
+        self.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+        return self.reset_token
+    
+    def verify_reset_token(self, token: str) -> bool:
+        """Verify if the reset token is valid and not expired"""
+        if not self.reset_token or not self.reset_token_expires:
+            return False
+        
+        if datetime.utcnow() > self.reset_token_expires:
+            # Token has expired, clear it
+            self.reset_token = None
+            self.reset_token_expires = None
+            return False
+        
+        return self.reset_token == token
+    
+    def clear_reset_token(self):
+        """Clear the reset token after password reset"""
+        self.reset_token = None
+        self.reset_token_expires = None
     
     def to_dict(self):
         return {

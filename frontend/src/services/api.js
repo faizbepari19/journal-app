@@ -53,6 +53,13 @@ export const authAPI = {
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
 };
 
+// Password Reset API
+export const resetPassword = (token, newPassword) => 
+  api.post('/auth/reset-password', { token, new_password: newPassword });
+
+export const validateResetToken = (token) => 
+  api.post('/auth/validate-reset-token', { token });
+
 // Entries API
 export const entriesAPI = {
   getEntries: () => api.get('/entries'),

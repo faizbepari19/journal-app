@@ -1,19 +1,27 @@
 import { useState, useEffect } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import ThemeToggle from '../components/ThemeToggle';
 
 const LoginPage = () => {
+  const location = useLocation();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+  const [successMessage, setSuccessMessage] = useState('');
 
   const { login, isLoading, error, isAuthenticated, clearError } = useAuthStore();
 
   useEffect(() => {
     clearError();
-  }, [clearError]);
+    // Check for success message from password reset
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clear the message from location state
+      window.history.replaceState({}, document.title);
+    }
+  }, [clearError, location.state]);
 
   const handleChange = (e) => {
     setFormData({
@@ -113,6 +121,17 @@ const LoginPage = () => {
                 </Link>
               </div>
             </div>
+
+            {successMessage && (
+              <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 animate-slide-in">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-sm font-medium text-green-700 dark:text-green-400">{successMessage}</p>
+                </div>
+              </div>
+            )}
 
             {error && (
               <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 animate-slide-in">
